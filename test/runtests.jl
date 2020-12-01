@@ -1,6 +1,13 @@
-using Guards
-using Test
+using Test, SafeTestsets, Distributed
 
-@testset "Guards.jl" begin
-    # Write your tests here.
+function redirect_devnull(f)
+    open(@static(Sys.iswindows() ? "nul" : "/dev/null"), "w") do io
+        redirect_stdout(io) do
+            f()
+        end
+    end
 end
+
+length(procs()) == 1 && addprocs(1)
+
+@safetestset "Basics"        begin include("test_basics.jl") end

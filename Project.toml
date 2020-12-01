@@ -3,11 +3,18 @@ uuid = "4870c19d-3b63-4bfc-b854-f41d47798bf9"
 authors = ["Paul Bayer"]
 version = "0.1.0"
 
+[deps]
+Actors = "18269d71-cc38-4e02-b8c8-1db30113a6dd"
+Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"
+Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
+
 [compat]
 julia = "1.5"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 
 [targets]
-test = ["Test"]
+test = ["Test", "SafeTestsets", "Documenter"]
