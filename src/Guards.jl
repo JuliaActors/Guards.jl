@@ -32,6 +32,6 @@ include("guard.jl")
 include("protocol.jl")
 include("api.jl")
 
-export guard
+export guard, @grd
 
 end

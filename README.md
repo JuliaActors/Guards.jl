@@ -10,3 +10,49 @@ Let actors guard your mutable variables!
 With `Guards` you can wrap mutable variables into a `:guard` actor. Then it can be accessed only via message passing. That way mutable variables can be safely accessed from parallel threads and distributed worker processes.
 
 ## Example
+
+```julia
+julia> using Guards
+
+julia> gd = guard([1,2,3])  # start a guards actor around an array
+Guards.Guard{Array{Int64,1}}(Link{Channel{Any}}(Channel{Any}(sz_max:32,sz_curr:0), 1, :guard))
+
+julia> call(gd)             # this gives a deep copy
+3-element Array{Int64,1}:
+ 1
+ 2
+ 3
+
+julia> push!(call(gd), 4)   # pushing to it ...
+4-element Array{Int64,1}:
+ 1
+ 2
+ 3
+ 4
+
+julia> call(gd)             # the guarded variable has not changed
+3-element Array{Int64,1}:
+ 1
+ 2
+ 3
+
+julia> call(gd, push!, 4);  # instead you call it with push!
+
+julia> @grd gd              # and it has changed (here using the @grd macro)
+4-element Array{Int64,1}:
+ 1
+ 2
+ 3
+ 4
+
+julia> @grd pop!(gd)        # pop! with the macro
+4
+```
+
+`Guards` is part of [`JuliaActors`](https://github.com/JuliaActors).
+
+## Author(s)
+
+- Paul Bayer
+
+**License:** MIT
