@@ -1,5 +1,11 @@
 # This file is machine-generated - editing it directly is not advised
 
+[[Actors]]
+deps = ["Distributed"]
+git-tree-sha1 = "014da5ce0dc41ecf8794f45d98ef09cd14f4ec19"
+uuid = "18269d71-cc38-4e02-b8c8-1db30113a6dd"
+version = "0.1.5"
+
 [[Base64]]
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
 
@@ -24,6 +30,7 @@ uuid = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 version = "0.25.5"
 
 [[Guards]]
+deps = ["Actors", "Distributed", "Reexport"]
 path = ".."
 uuid = "4870c19d-3b63-4bfc-b854-f41d47798bf9"
 version = "0.1.0"
@@ -82,6 +89,12 @@ uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 [[Random]]
 deps = ["Serialization"]
 uuid = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+
+[[Reexport]]
+deps = ["Pkg"]
+git-tree-sha1 = "7b1d07f411bc8ddb7977ec7f377b97b158514fe0"
+uuid = "189a3867-3050-52da-a836-e630ba90ab69"
+version = "0.2.0"
 
 [[SHA]]
 uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
