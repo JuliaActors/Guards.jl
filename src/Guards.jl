@@ -31,6 +31,7 @@ import Actors: spawn, _ACT, Init, Call, Cast
 include("guard.jl")
 include("protocol.jl")
 include("api.jl")
+include("interface.jl")
 
 export guard, @grd
 
