@@ -21,3 +21,4 @@ end
 function Actors.onmessage(A::_ACT, ::Val{:guard}, msg::Cast)
     A.res = first(msg.x)(A.sta, msg.x[2:end]...)
 end
+

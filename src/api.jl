@@ -33,15 +33,29 @@ its guarded variable var.
 """
 Actors.cast(gd::Guard, f, args...) = cast(gd.link, f, args...)
 
+"""
+update!(gd::Guard, var)
+
+Update a guarded variable represented by `gd` with `var`.
+
+**Note:** `var` must be of the same type as the guarded 
+variable!
+"""
+function Actors.update!(gd::Guard, var)
+    @assert guardtype(gd) == typeof(var) "var must have the same type as the guarded variable"
+    init!(gd.link, id, var)
+    return deepcopy(var)
+end
 
 """
 ```
 @grd gd
 @grd f(gd, args...)
 ```
-Return a deep copy of a guarded variable `var` or of the 
-result of a function call on it. This is a wrapper to
-[`call`](@ref).
+Execute a function `f` on a guarded variable `var` 
+represented by an actor link `gd` and return a deep copy 
+of the result or return a deep copy of `var`.  This is 
+a wrapper to [`call`](@ref).
 
 # Parameters
 - `gd::Guard`: a link to the `:guard` actor,

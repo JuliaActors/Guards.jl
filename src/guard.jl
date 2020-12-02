@@ -19,6 +19,8 @@ end
 
 id(x) = x
 
+guardtype(::Guard{T}) where T = T
+
 """
 ```
 guard(var;  name=nothing, pid=myid(), thrd=false, 

@@ -48,4 +48,18 @@ julia> @grd gd              # ... it got changed (here using the @grd macro)
 
 julia> @grd pop!(gd)        # pop! with the macro
 4
+
+julia> update!(gd, [5,6,7,8])
+4-element Array{Int64,1}:
+ 5
+ 6
+ 7
+ 8
+
+julia> @grd gd
+4-element Array{Int64,1}:
+ 5
+ 6
+ 7
+ 8
 ```

@@ -15,5 +15,8 @@ gd = guard([1,2,3])
 cast(gd, push!, 5)
 @test (@grd gd) == [1,2,3,4,5]
 @test (@grd pop!(gd)) == 5
+@test pop!(update!(gd, [5,6,7,8])) == 8
+@test (@grd gd) == [5,6,7,8]
 
 @test (@grd 1) == "@grd: not a symbol or a call!"
+@test_throws AssertionError update!(gd, [10.0, 11.0])
