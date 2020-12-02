@@ -13,6 +13,9 @@ makedocs(;
     ),
     pages=[
         "Home" => "index.md",
+        "intro.md",
+        "guards.md",
+        "api.md",
     ],
 )
 

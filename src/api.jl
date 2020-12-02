@@ -20,7 +20,7 @@ Actors.call(gd::Guard, f, args...) = call(gd.link, f, args...)
 Actors.call(gd::Guard) = call(gd.link)
 
 """
-cast(gd::Guard, f, args...)
+    cast(gd::Guard, f, args...)
 
 Cast a message to a guard actor `gd` to execute `f(var, args...)` on  
 its guarded variable var.
@@ -58,6 +58,6 @@ macro grd(expr)
         args = expr.args[3:end]
         esc(:(call($gd, $f, $(args...))))
     else
-        error("@grd: not a symbol or a call!")
+        "@grd: not a symbol or a call!"
     end
 end
