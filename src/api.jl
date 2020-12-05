@@ -34,7 +34,7 @@ its guarded variable var.
 Actors.cast(gd::Guard, f, args...) = cast(gd.link, f, args...)
 
 """
-update!(gd::Guard, var)
+    update!(gd::Guard, var)
 
 Update a guarded variable represented by `gd` with `var`.
 
@@ -49,8 +49,8 @@ end
 
 """
 ```
-@grd gd
 @grd f(gd, args...)
+@grd gd
 ```
 Execute a function `f` on a guarded variable `var` 
 represented by an actor link `gd` and return a deep copy 

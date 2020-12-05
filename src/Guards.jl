@@ -33,6 +33,6 @@ include("protocol.jl")
 include("api.jl")
 include("interface.jl")
 
-export guard, @grd
+export guard, @grd, Guard
 
 end
