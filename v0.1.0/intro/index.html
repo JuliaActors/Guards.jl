@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Introduction · Guards.jl</title><link rel="canonical" href="https://JuliaActors.github.io/Guards.jl/intro/"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">Guards.jl</span></div><form class="docs-search" action="../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li class="is-active"><a class="tocitem" href>Introduction</a><ul class="internal"><li><a class="tocitem" href="#Example"><span>Example</span></a></li><li><a class="tocitem" href="#Multithreading"><span>Multithreading</span></a></li><li><a class="tocitem" href="#Distributed"><span>Distributed</span></a></li></ul></li><li><a class="tocitem" href="../guards/">Understanding Guards</a></li><li><a class="tocitem" href="../api/">Guards API</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Introduction</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Introduction</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/JuliaActors/Guards.jl/blob/master/docs/src/intro.md#L" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Introduction"><a class="docs-heading-anchor" href="#Introduction">Introduction</a><a id="Introduction-1"></a><a class="docs-heading-anchor-permalink" href="#Introduction" title="Permalink"></a></h1><p>In order to secure a mutable variable from concurrent access by multiple threads and/or distributed workers you call <a href="../api/#Guards.guard-Tuple{Any}"><code>guard</code></a> on it. That wraps it into a <code>:guard</code> actor represented only by a <a href="../api/#Guards.Guard"><code>Guard</code></a> link.</p><p>Then it can be accessed only by message passing via <a href="../api/#Actors.cast-Tuple{Guard,Any,Vararg{Any,N} where N}"><code>cast</code></a> and <a href="../api/#Actors.call-Tuple{Guard,Any,Vararg{Any,N} where N}"><code>call</code></a> over that link. Calls to it return deep copies. You can still modify a guarded variable by sending the <code>:guard</code> actor a modifier function and arguments to it.</p><p>The <a href="../api/#Guards.@grd-Tuple{Any}"><code>@grd</code></a> macro expands a call to the link into a <code>call</code> request.</p><h2 id="Example"><a class="docs-heading-anchor" href="#Example">Example</a><a id="Example-1"></a><a class="docs-heading-anchor-permalink" href="#Example" title="Permalink"></a></h2><pre><code class="language-julia">julia&gt; using Guards
+
+julia&gt; gd = guard([1,2,3])  # start a guard actor around an array
+Guards.Guard{Array{Int64,1}}(Link{Channel{Any}}(Channel{Any}(sz_max:32,sz_curr:0), 1, :guard))
+
+julia&gt; call(gd)             # get a deep copy of it
+3-element Array{Int64,1}:
+ 1
+ 2
+ 3
+
+julia&gt; push!(call(gd), 4)   # pushing to it ...
+4-element Array{Int64,1}:
+ 1
+ 2
+ 3
+ 4
+
+julia&gt; call(gd)             # the guarded variable has not changed
+3-element Array{Int64,1}:
+ 1
+ 2
+ 3
+
+julia&gt; call(gd, push!, 4);  # if you call it with push!,
+
+julia&gt; @grd gd              # ... it got changed (here using the @grd macro)
+4-element Array{Int64,1}:
+ 1
+ 2
+ 3
+ 4
+
+julia&gt; @grd pop!(gd)        # pop! with the macro
+4
+
+julia&gt; update!(gd, [5,6,7,8])
+4-element Array{Int64,1}:
+ 5
+ 6
+ 7
+ 8
+
+julia&gt; @grd gd
+4-element Array{Int64,1}:
+ 5
+ 6
+ 7
+ 8</code></pre><h2 id="Multithreading"><a class="docs-heading-anchor" href="#Multithreading">Multithreading</a><a id="Multithreading-1"></a><a class="docs-heading-anchor-permalink" href="#Multithreading" title="Permalink"></a></h2><p>Even if with actors we avoid race conditions, concurrency is still challenging. Consider the following where 8 threads concurrently try to increment a guarded variable:</p><pre><code class="language-julia">julia&gt; using .Threads
+
+julia&gt; gd = guard(zeros(Int, 10))
+Guard{Array{Int64,1}}(Link{Channel{Any}}(Channel{Any}(sz_max:32,sz_curr:0), 1, :guard))
+
+julia&gt; for i in 1:10
+           @threads for _ in 1:nthreads()
+               gd[i] += 1
+           end
+       end
+
+julia&gt; @grd gd
+10-element Array{Int64,1}:
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1</code></pre><p>What has happened? <code>gd[i] += 1</code> is not a single actor call. First all 8 threads get 0 by doing <code>getindex(var, i)</code> and then they do <code>setindex!(var, i, 0+1)</code> on it. The result is 1 and not 8 as we would expect. In order to get it right we create a function:</p><pre><code class="language-julia">julia&gt; incr(arr, index, by) = arr[index] += by
+incr (generic function with 1 method)
+
+julia&gt; gd = guard(zeros(Int, 10))
+Guard{Array{Int64,1}}(Link{Channel{Any}}(Channel{Any}(sz_max:32,sz_curr:0), 1, :guard))
+
+julia&gt; for i in 1:10
+           @threads for _ in 1:nthreads()
+               @grd incr(gd, i, 1)
+           end
+       end
+
+julia&gt; @grd gd
+10-element Array{Int64,1}:
+ 8
+ 8
+ 8
+ 8
+ 8
+ 8
+ 8
+ 8
+ 8
+ 8</code></pre><p>Thus the guard actor receives <code>nthreads()</code> calls to <code>incr</code> for each <code>i</code> and it works as expected.</p><h2 id="Distributed"><a class="docs-heading-anchor" href="#Distributed">Distributed</a><a id="Distributed-1"></a><a class="docs-heading-anchor-permalink" href="#Distributed" title="Permalink"></a></h2><p>For distributed computing we can create named guards or guards with remote links. All worker processes can work with the same guarded variable:</p><pre><code class="language-julia">julia&gt; using Distributed
+
+julia&gt; addprocs(1);
+
+julia&gt; @everywhere using Guards
+
+julia&gt; gd = guard([1,2,3], remote=true)  # a guard with a remote link
+Guard{Array{Int64,1}}(Link{RemoteChannel{Channel{Any}}}(RemoteChannel{Channel{Any}}(1, 1, 13), 1, :guard))
+
+julia&gt; fetch(@spawnat 2 @grd gd)         # show it on pid 2
+3-element Array{Int64,1}:
+ 1
+ 2
+ 3
+
+julia&gt; @fetchfrom 2 InteractiveUtils.varinfo()
+  name               size summary
+  ––––––––––– ––––––––––– –––––––––––––––––––––
+  Base                    Module
+  Core                    Module
+  Distributed 918.170 KiB Module
+  Main                    Module
+  gd             56 bytes Guard{Array{Int64,1}}
+
+julia&gt; @grd push!(gd, 4)                 # push! on pid 1
+
+4-element Array{Int64,1}:
+ 1
+ 2
+ 3
+ 4
+
+julia&gt; @spawnat 2 @grd push!(gd, 5)      # push on pid 2
+Future(2, 1, 20, nothing)
+
+julia&gt; @grd gd                           # it is everywhere up to date
+5-element Array{Int64,1}:
+ 1
+ 2
+ 3
+ 4
+ 5</code></pre><p>If we send local guarded variables to distributed actors or if we create distributed actors with guarded variables as arguments, their local links are automatically converted to remote ones, so they can work with them.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Home</a><a class="docs-footer-nextpage" href="../guards/">Understanding Guards »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 8 December 2020 15:32">Tuesday 8 December 2020</span>. Using Julia version 1.5.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
