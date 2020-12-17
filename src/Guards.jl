@@ -21,7 +21,7 @@ pkg> add "https://github.com/JuliaActors/Guards.jl"
 module Guards
 
 "Gives the package version."
-const version = v"0.1.0"
+const version = v"0.2.0"
 
 using Reexport, Distributed
 
