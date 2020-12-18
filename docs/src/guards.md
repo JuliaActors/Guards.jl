@@ -11,9 +11,13 @@ CurrentModule = Guards
 As for now a `:guard` actor
 
 - is a "single receptionist" in Agha's sense or it
-- is similar to an *agent* in Elixir. 
+- is similar to an *agent* in Elixir.
 
-The guarded variable is protected by message passing and the `:guard` actor being the only entity allowed to directly modify it. In order to modify a guarded variable we must send a modifier function with its arguments to the `:guard` actor. It then responds with a deep copy of the result or of the variable. So e.g. threads can safely do iterations on those.
+The guarded variable is protected by message passing and the `:guard` actor being the only entity allowed to directly modify it. In order to modify a guarded variable we must [`call`](@ref) the `:guard` actor with a modifier function and its arguments. The actor then applies that to the guarded variable and responds with a deep copy of the result.
+
+If we `call` the `:guard` actor without further arguments, it responds with a deep copy of the guarded variable. So e.g. threads can safely do iterations on the copy.
+
+The [`@grd`](@ref) macro is syntactical sugar for  `call` and lets you work with the guard actor as if it were the guarded variable itself.
 
 ## Interfaces
 

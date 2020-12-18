@@ -4,19 +4,38 @@
 #
 
 """
-    call(gd::Guard, f, args...)
-
+```
+call(gd::Guard, [lk::Link,] f::Function, args...)
+```
 Call a guard actor `gd` to execute `f(var, args...)` on  
-its guarded variable var and to send respond with a 
+its guarded variable `var` and to respond with a 
 deep copy of the result. 
 
 # Arguments
 - `gd::Guard`: link to the `:guard` actor,
-- `f`: callable object taking the guarded variable `var`
+- `lk::Link`: if a link `lk` is provided send the response
+    to that, else do a synchronous `request`,
+- `f`: function taking the guarded variable `var`
     as first argument,
 - `args...`: further arguments to `f`.
 """
-Actors.call(gd::Guard, f, args...) = call(gd.link, f, args...)
+Actors.call(gd::Guard, lk::Link, f::F, args...) where F<:Function = call(gd.link, lk, f, args...)
+Actors.call(gd::Guard, f::F, args...) where F<:Function = call(gd.link, f, args...)
+
+"""
+```
+call(gd::Guard [, lk::Link])
+```
+Call a guard actor `gd` to respond with a deep copy of
+the guarded variable `var`.
+
+# Arguments
+# Arguments
+- `gd::Guard`: link to the `:guard` actor,
+- `lk::Link`: if a link `lk` is provided send the response
+    to that, else do a synchronous `request`,
+"""
+Actors.call(gd::Guard, lk::Link) = call(gd.link, lk)
 Actors.call(gd::Guard) = call(gd.link)
 
 """
@@ -48,14 +67,16 @@ function Actors.update!(gd::Guard, var)
 end
 
 """
-```
-@grd f(gd, args...)
-@grd gd
-```
+    @grd f(gd, args...)
+
 Execute a function `f` on a guarded variable `var` 
 represented by an actor link `gd` and return a deep copy 
 of the result or return a deep copy of `var`.  This is 
 a wrapper to [`call`](@ref).
+
+    @grd gd
+
+Return a deep copy of the guarded variable.
 
 # Parameters
 - `gd::Guard`: a link to the `:guard` actor,

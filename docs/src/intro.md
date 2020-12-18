@@ -8,7 +8,7 @@ In order to secure a mutable variable from concurrent access by multiple threads
 
 Then it can be accessed only by message passing via [`cast`](@ref) and [`call`](@ref) over that link. Calls to it return deep copies. You can still modify a guarded variable by sending the `:guard` actor a modifier function and arguments to it.
 
-The [`@grd`](@ref) macro expands a call to the link into a `call` request.
+The [`@grd`](@ref) macro expands a call to the link into a synchronous `call` request.
 
 ## Example
 
