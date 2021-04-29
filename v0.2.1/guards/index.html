@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Understanding Guards · Guards.jl</title><link rel="canonical" href="https://JuliaActors.github.io/Guards.jl/guards/"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../"><img src="../assets/logo.svg" alt="Guards.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit">Guards.jl</span></div><form class="docs-search" action="../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li><a class="tocitem" href="../intro/">Introduction</a></li><li class="is-active"><a class="tocitem" href>Understanding Guards</a><ul class="internal"><li><a class="tocitem" href="#Interfaces"><span>Interfaces</span></a></li><li><a class="tocitem" href="#Iteration"><span>Iteration</span></a></li><li><a class="tocitem" href="#Protection"><span>Protection</span></a></li></ul></li><li><a class="tocitem" href="../api/">Guards API</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Understanding Guards</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Understanding Guards</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/JuliaActors/Guards.jl/blob/master/docs/src/guards.md#L" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Understanding-Guards"><a class="docs-heading-anchor" href="#Understanding-Guards">Understanding Guards</a><a id="Understanding-Guards-1"></a><a class="docs-heading-anchor-permalink" href="#Understanding-Guards" title="Permalink"></a></h1><p><code>Guards</code> is an <a href="https://github.com/JuliaActors/Actors.jl"><code>Actors</code></a> protocol. It solves the mutual exclusion problem for shared variables:</p><blockquote><p>The mutual exclusion problem arises when two processes should never simultaneously access a shared resource. ... Although, a single receptionist may control access to a resource, the resource itself can still be modeled as a system of actors so that there may be concurrency in the use of the resource. ... In general, a programmer using an actor language need not be concerned with the mutual exclusion problem. <sup class="footnote-reference"><a id="citeref-1" href="#footnote-1">[1]</a></sup></p></blockquote><p>As for now a <code>:guard</code> actor</p><ul><li>is a &quot;single receptionist&quot; in Agha&#39;s sense or it</li><li>is similar to an <em>agent</em> in Elixir.</li></ul><p>The guarded variable is protected by message passing and the <code>:guard</code> actor being the only entity allowed to directly modify it. In order to modify a guarded variable we must <a href="../api/#Actors.call-Tuple{Guard, Link}"><code>call</code></a> the <code>:guard</code> actor with a modifier function and its arguments. The actor then applies that to the guarded variable and responds with a deep copy of the result.</p><p>If we <code>call</code> the <code>:guard</code> actor without further arguments, it responds with a deep copy of the guarded variable. So e.g. threads can safely do iterations on the copy.</p><p>The <a href="../api/#Guards.@grd-Tuple{Any}"><code>@grd</code></a> macro is syntactical sugar for  <code>call</code> and lets you work with the guard actor as if it were the guarded variable itself.</p><h2 id="Interfaces"><a class="docs-heading-anchor" href="#Interfaces">Interfaces</a><a id="Interfaces-1"></a><a class="docs-heading-anchor-permalink" href="#Interfaces" title="Permalink"></a></h2><p>For guarded <code>Array</code>s and <code>Dict</code>s an interface has been implemented. With that you can do indexing on <code>Guard{T&lt;:AbstractArray}</code> and <code>Guard{T&lt;:AbstractDict}</code> types:</p><pre><code class="language-julia">julia&gt; gd = guard([1,2,3])
+Guards.Guard{Array{Int64,1}}(Link{Channel{Any}}(Channel{Any}(sz_max:32,sz_curr:0), 1, :guard))
+
+julia&gt; @grd gd
+3-element Array{Int64,1}:
+ 1
+ 2
+ 3
+
+julia&gt; gd[1] = 10
+10
+
+julia&gt; @grd gd
+3-element Array{Int64,1}:
+ 10
+  2
+  3
+
+julia&gt; length(gd)
+3
+
+julia&gt; dd = guard(Dict(&quot;baz&quot; =&gt; 17, &quot;bar&quot; =&gt; 4711))
+Guards.Guard{Dict{String,Int64}}(Link{Channel{Any}}(Channel{Any}(sz_max:32,sz_curr:0), 1, :guard))
+
+julia&gt; @grd dd
+Dict{String,Int64} with 2 entries:
+  &quot;bar&quot; =&gt; 4711
+  &quot;baz&quot; =&gt; 17
+
+julia&gt; dd[&quot;baz&quot;]
+17
+
+julia&gt; dd[&quot;dummy&quot;] = 10
+10
+
+julia&gt; @grd dd
+Dict{String,Int64} with 3 entries:
+  &quot;bar&quot;   =&gt; 4711
+  &quot;baz&quot;   =&gt; 17
+  &quot;dummy&quot; =&gt; 10</code></pre><h2 id="Iteration"><a class="docs-heading-anchor" href="#Iteration">Iteration</a><a id="Iteration-1"></a><a class="docs-heading-anchor-permalink" href="#Iteration" title="Permalink"></a></h2><p>If you need to iterate concurrently on guarded variables, you can do it on the copies like that:</p><pre><code class="language-julia">julia&gt; [i+5 for i in @grd gd]
+3-element Array{Int64,1}:
+ 15
+  7
+  8
+
+julia&gt; for (i, j) in @grd dd
+           println((i, j))
+       end
+(&quot;bar&quot;, 4711)
+(&quot;baz&quot;, 17)
+(&quot;dummy&quot;, 10)</code></pre><h2 id="Protection"><a class="docs-heading-anchor" href="#Protection">Protection</a><a id="Protection-1"></a><a class="docs-heading-anchor-permalink" href="#Protection" title="Permalink"></a></h2><p>Going deeper into the protection mechanism, a guarded variable is protected not only by the <code>:guard</code> actor but also by the <a href="../api/#Guards.Guard"><code>Guard</code></a> link and by the protocol/API:</p><ul><li>a <code>Guard</code> variable wraps the actor link. No message can be sent directly to it. There is no implemented <code>send</code> to a <code>Guard</code> type.</li><li>the only three implemented methods to communicate with a <code>Guard</code> type are <a href="../api/#Actors.call-Tuple{Guard, Link}"><code>call</code></a> and <a href="../api/#Actors.cast-Tuple{Guard, Any, Vararg{Any, N} where N}"><code>cast</code></a> and <a href="../api/#Actors.update!-Tuple{Guard, Any}"><code>update!</code></a>. The <code>Call</code> protocol is different from <code>Actors</code>&#39; as it returns only deep copies.</li></ul><p>Still it is possible to access the guarded variable by using the <code>Actors</code> API, but not in a straightforward way.</p><section class="footnotes is-size-7"><ul><li class="footnote" id="footnote-1"><a class="tag is-link" href="#citeref-1">1</a>Gul Agha; Actors, A Model of Concurrent Computation in Distributed Systems.- Ch. 6.1.3, p.95</li></ul></section></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../intro/">« Introduction</a><a class="docs-footer-nextpage" href="../api/">Guards API »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Thursday 29 April 2021 17:47">Thursday 29 April 2021</span>. Using Julia version 1.6.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
